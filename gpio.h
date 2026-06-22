@@ -5,6 +5,9 @@
 #include <linux/irq.h>
 #include <linux/interrupt.h>
 
+#define NOF_GPIOS 40
+#define GPIO_CHIP_BASE 512
+
 int gpio_init(irqreturn_t (*irq_handler)(int, void*), int *gpios, int nof_gpios);
 void gpio_deinit(int *gpios, int nof_gpios);
 

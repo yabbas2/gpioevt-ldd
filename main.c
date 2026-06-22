@@ -20,8 +20,6 @@
 
 #define UNUSED(x) ((void)(x))
 
-#define NOF_GPIOS 40
-
 MODULE_AUTHOR("Yousef Abbas <yousef.abbas.2@outlook.com>");
 MODULE_DESCRIPTION("GPIO event logger driver for raspberry pi zero 2w");
 MODULE_LICENSE("GPL");
@@ -145,11 +143,11 @@ static void log_event(data_entry_t *entry) {
 }
 
 static irqreturn_t gpioevt_irq_handler(int irq, void *dev_id) {
-    int gpio = (int)(uintptr_t)dev_id;
+    int gpio_offset = (int)(uintptr_t)dev_id;
     data_entry_t entry = {
         .deserialized.timestamp = ktime_get(),
-        .deserialized.pin = gpio,
-        .deserialized.direction = gpio_get_value(gpio),
+        .deserialized.pin = gpio_offset,
+        .deserialized.level = gpio_get_value(GPIO_CHIP_BASE + gpio_offset),
     };
     log_event(&entry);
     return IRQ_HANDLED;

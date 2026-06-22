@@ -24,14 +24,14 @@ int gpio_init(irqreturn_t (*irq_handler)(int, void *), int *gpios, int nof_gpios
 
     // request gpios and register irqs
     for (int i = 0; i < nof_gpios; i++) {
-        ret = gpio_request(gpios[i], "gpioevt");
+        ret = gpio_request(GPIO_CHIP_BASE + gpios[i], "gpioevt");
         if (ret < 0) {
-            pr_err("gpioevt: failed to request GPIO %d\n", gpios[i]);
+            pr_err("gpioevt: failed to request GPIO %d (err=%d)\n", gpios[i], ret);
             goto err;
         }
         nof_gpios_requested++;
 
-        struct gpio_desc *desc = gpio_to_desc(gpios[i]);
+        struct gpio_desc *desc = gpio_to_desc(GPIO_CHIP_BASE + gpios[i]);
         if (!desc) {
             pr_err("gpioevt: invalid GPIO %d\n", gpios[i]);
             ret = -EINVAL;
@@ -49,7 +49,7 @@ int gpio_init(irqreturn_t (*irq_handler)(int, void *), int *gpios, int nof_gpios
             goto err;
         }
 
-        int irqno = gpio_to_irq(gpios[i]);
+        int irqno = gpio_to_irq(GPIO_CHIP_BASE + gpios[i]);
         if (irqno < 0) {
             pr_err("gpioevt: failed to get IRQ for GPIO %d\n", gpios[i]);
             ret = irqno;
@@ -77,7 +77,7 @@ void gpio_deinit(int *gpios, int nof_gpios) {
         if (irq_numbers[i] != -ENXIO) {
             free_irq(irq_numbers[i], (void *)(uintptr_t)gpios[i]);
         }
-        gpio_free(gpios[i]);
+        gpio_free(GPIO_CHIP_BASE + gpios[i]);
     }
     if (irq_numbers != NULL) {
         kfree(irq_numbers);

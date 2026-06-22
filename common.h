@@ -7,7 +7,7 @@
 struct struct_data {
     ktime_t timestamp;
     unsigned char pin;
-    unsigned char direction;
+    unsigned char level;
 } __attribute__((packed));
 
 #define DATA_ENTRY_SIZE sizeof(struct struct_data)
