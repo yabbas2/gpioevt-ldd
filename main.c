@@ -15,8 +15,8 @@
 #include <linux/wait.h>
 
 #include "circular_buffer.h"
-#include "gpio.h"
 #include "common.h"
+#include "gpio.h"
 
 #define UNUSED(x) ((void)(x))
 
@@ -36,6 +36,11 @@ static DECLARE_WAIT_QUEUE_HEAD(read_wq);
 
 module_param(log_size, uint, 0644);
 MODULE_PARM_DESC(log_size, "Circular buffer (log) size to store gpio events");
+static uint debounce_ms = 20;
+static ktime_t last_irq_time[NOF_GPIOS];
+
+module_param(debounce_ms, uint, 0644);
+MODULE_PARM_DESC(debounce_ms, "Debounce interval in milliseconds");
 module_param_array(gpios, uint, &nof_gpios, 0644);
 MODULE_PARM_DESC(gpios, "List of gpios to monitor (separated by commas)");
 
@@ -55,7 +60,7 @@ static ssize_t gpioevt_read(struct file *file, char __user *buf, size_t count, l
     size_t nof_avail_entries = 0;
     int ret = 0;
 
-    pr_info("gpioevt: read\n");
+    pr_info("gpioevt: read count=%ld, ppos=%lld\n", count, *ppos);
     if (count == 0) {
         return 0;
     }
@@ -144,8 +149,15 @@ static void log_event(data_entry_t *entry) {
 
 static irqreturn_t gpioevt_irq_handler(int irq, void *dev_id) {
     int gpio_offset = (int)(uintptr_t)dev_id;
+    ktime_t now = ktime_get();
+
+    if (ktime_us_delta(now, last_irq_time[gpio_offset]) < debounce_ms * 1000) {
+        return IRQ_HANDLED;
+    }
+    last_irq_time[gpio_offset] = now;
+
     data_entry_t entry = {
-        .deserialized.timestamp = ktime_get(),
+        .deserialized.timestamp = ktime_get_seconds(),
         .deserialized.pin = gpio_offset,
         .deserialized.level = gpio_get_value(GPIO_CHIP_BASE + gpio_offset),
     };

@@ -5,7 +5,7 @@
 #include <linux/time.h>
 
 struct struct_data {
-    ktime_t timestamp;
+    time64_t timestamp;
     unsigned char pin;
     unsigned char level;
 } __attribute__((packed));
